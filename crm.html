@@ -1,0 +1,1463 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRM Магазина</title>
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Google Fonts: Roboto -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: #F1F5F9;
+      color: #111827;
+    }
+    .sidebar {
+      background-color: #111827;
+      color: #FFFFFF;
+      height: 100vh;
+      position: fixed;
+      width: 250px;
+      top: 0;
+      left: 0;
+      padding-top: 20px;
+    }
+    .sidebar a {
+      color: #FFFFFF;
+      text-decoration: none;
+      padding: 10px 20px;
+      display: block;
+    }
+    .sidebar a:hover {
+      background-color: #1D4ED8;
+    }
+    .content {
+      margin-left: 260px;
+      padding: 20px;
+    }
+    .card {
+      background-color: #FFFFFF;
+      border: none;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .btn-primary {
+      background-color: #1D4ED8;
+      border-color: #1D4ED8;
+    }
+    .btn-primary:hover {
+      background-color: #1E40AF;
+      border-color: #1E40AF;
+    }
+    .btn-info {
+      background-color: #1D4ED8;
+      border-color: #1D4ED8;
+      color: #FFFFFF;
+    }
+    .btn-info:hover {
+      background-color: #1E40AF;
+      border-color: #1E40AF;
+    }
+    .btn-danger {
+      background-color: #B91C1C;
+      border-color: #B91C1C;
+    }
+    .btn-danger:hover {
+      background-color: #991B1B;
+      border-color: #991B1B;
+    }
+    .btn-warning {
+      background-color: #D97706;
+      border-color: #D97706;
+    }
+    .btn-warning:hover {
+      background-color: #B45309;
+      border-color: #B45309;
+    }
+    .btn-success {
+      background-color: #15803D;
+      border-color: #15803D;
+    }
+    .btn-success:hover {
+      background-color: #166534;
+      border-color: #166534;
+    }
+    .table th, .table td {
+      vertical-align: middle;
+    }
+    .modal-backdrop {
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+    .form-label {
+      color: #111827;
+    }
+    .text-secondary {
+      color: #64748B;
+    }
+    .low-stock {
+      color: #B91C1C;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- React and ReactDOM -->
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <!-- Bootstrap 5 JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Babel for JSX -->
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.24.0/babel.min.js"></script>
+
+  <script type="text/babel">
+    const { useState } = React;
+
+    // Mock Data
+    const customers = [
+      { id: 1, name: 'Иван Иванов', email: 'ivan@example.com', phone: '123-456-7890', totalPurchases: 5000, lastPurchase: '2025-04-20' },
+      { id: 2, name: 'Анна Петрова', email: 'anna@example.com', phone: '098-765-4321', totalPurchases: 3000, lastPurchase: '2025-04-18' },
+      { id: 3, name: 'Мария Сидорова', email: 'maria@example.com', phone: '111-222-3333', totalPurchases: 7000, lastPurchase: '2025-04-22' },
+    ];
+
+    const sales = [
+      { id: 1, date: '2025-04-22', customerId: 1, amount: 1000, items: [{ product: 'Товар A', quantity: 2, price: 500 }], status: 'Завершена' },
+      { id: 2, date: '2025-04-21', customerId: 2, amount: 1500, items: [{ product: 'Товар B', quantity: 1, price: 1500 }], status: 'Завершена' },
+      { id: 3, date: '2025-04-20', customerId: 3, amount: 2000, items: [{ product: 'Товар C', quantity: 4, price: 500 }], status: 'Завершена' },
+    ];
+
+    const products = [
+      { id: 1, name: 'Товар A', stock: 50, price: 500, category: 'Электроника' },
+      { id: 2, name: 'Товар B', stock: 5, price: 1500, category: 'Одежда' },
+      { id: 3, name: 'Товар C', stock: 100, price: 200, category: 'Продукты' },
+    ];
+
+    const loyaltyPrograms = [
+      { id: 1, name: 'Скидка 10%', type: 'Скидка', rate: '10%', status: 'Активна' },
+      { id: 2, name: 'Бонусы за покупку', type: 'Бонусы', rate: '5% кэшбэк', status: 'Активна' },
+      { id: 3, name: 'Кэшбэк 5%', type: 'Кэшбэк', rate: '5%', status: 'Неактивна' },
+    ];
+
+    const reports = [
+      { id: 1, name: 'Продажи за апрель', period: '2025-04-01 - 2025-04-30', type: 'Продажи', status: 'Готов' },
+      { id: 2, name: 'Активность клиентов', period: '2025-04-01 - 2025-04-30', type: 'Клиенты', status: 'Готов' },
+      { id: 3, name: 'Эффективность сотрудников', period: '2025-04-01 - 2025-04-30', type: 'Сотрудники', status: 'В процессе' },
+    ];
+
+    const employees = [
+      { id: 1, name: 'Дмитрий Смирнов', email: 'dmitry@example.com', role: 'Менеджер', accessLevel: 'Полный' },
+      { id: 2, name: 'Елена Кузнецова', email: 'elena@example.com', role: 'Продавец', accessLevel: 'Ограниченный' },
+      { id: 3, name: 'Алексей Попов', email: 'alexey@example.com', role: 'Администратор', accessLevel: 'Полный' },
+    ];
+
+    const settings = [
+      { id: 1, name: 'Настройки доступа', status: 'Активно', description: 'Управление ролями пользователей' },
+      { id: 2, name: 'Резервное копирование', status: 'Запланировано', description: 'Ежедневное копирование данных' },
+      { id: 3, name: 'Интеграции', status: 'Активно', description: 'Подключение к внешним сервисам' },
+    ];
+
+    // Sidebar Component
+    const Sidebar = ({ setPage }) => (
+      <div className="sidebar">
+        <h5 className="mb-3 ps-3">Меню CRM</h5>
+        <a href="#" onClick={() => setPage('dashboard')}>Главная страница</a>
+        <a href="#" onClick={() => setPage('customers')}>Клиентская база</a>
+        <a href="#" onClick={() => setPage('sales')}>Продажи</a>
+        <a href="#" onClick={() => setPage('inventory')}>Товарный учет</a>
+        <a href="#" onClick={() => setPage('loyalty')}>Программы лояльности</a>
+        <a href="#" onClick={() => setPage('reports')}>Отчеты и аналитика</a>
+        <a href="#" onClick={() => setPage('employees')}>Управление сотрудниками</a>
+        <a href="#" onClick={() => setPage('settings')}>Настройки системы</a>
+      </div>
+    );
+
+    // Dashboard Component (Unchanged)
+    const Dashboard = () => {
+      const totalSales = sales.reduce((sum, sale) => sum + sale.amount, 0);
+      const numberOfCustomers = customers.length;
+      const averageOrderValue = sales.length > 0 ? (totalSales / sales.length).toFixed(2) : 0;
+      const recentSales = sales.slice(-5).reverse();
+      const topCustomers = [...customers].sort((a, b) => b.totalPurchases - a.totalPurchases).slice(0, 5);
+
+      return (
+        <div>
+          <h2 className="mb-4">Главная страница</h2>
+          <div className="row">
+            <div className="col-md-4">
+              <div className="card mb-4">
+                <div className="card-body">
+                  <h5 className="card-title">Общая сумма продаж</h5>
+                  <p className="card-text">₽{totalSales}</p>
+                </div>
+              </div>
+            </div>
+            <div className="col-md-4">
+              <div className="card mb-4">
+                <div className="card-body">
+                  <h5 className="card-title">Количество клиентов</h5>
+                  <p className="card-text">{numberOfCustomers}</p>
+                </div>
+              </div>
+            </div>
+            <div className="col-md-4">
+              <div className="card mb-4">
+                <div className="card-body">
+                  <h5 className="card-title">Средний чек</h5>
+                  <p className="card-text">₽{averageOrderValue}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <h3 className="mb-3">Последние продажи</h3>
+          <table className="table table-striped table-hover">
+            <thead>
+              <tr>
+                <th>Дата</th>
+                <th>Клиент</th>
+                <th>Сумма</th>
+                <th>Действия</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recentSales.map(sale => (
+                <tr key={sale.id}>
+                  <td>{sale.date}</td>
+                  <td>{customers.find(c => c.id === sale.customerId)?.name || 'Неизвестно'}</td>
+                  <td>₽{sale.amount}</td>
+                  <td>
+                    <button className="btn btn-info btn-sm">Просмотр</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <h3 className="mb-3">Топ клиенты</h3>
+          <table className="table table-striped table-hover">
+            <thead>
+              <tr>
+                <th>Имя</th>
+                <th>Общая сумма покупок</th>
+                <th>Действия</th>
+              </tr>
+            </thead>
+            <tbody>
+              {topCustomers.map(customer => (
+                <tr key={customer.id}>
+                  <td>{customer.name}</td>
+                  <td>₽{customer.totalPurchases}</td>
+                  <td>
+                    <button className="btn btn-info btn-sm">Просмотр</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    };
+
+    // CustomerBase Component (Unchanged, with fixed typo)
+    const CustomerBase = () => {
+      const [searchTerm, setSearchTerm] = useState('');
+      const [showAddModal, setShowAddModal] = useState(false);
+      const [showViewModal, setShowViewModal] = useState(false);
+      const [selectedCustomer, setSelectedCustomer] = useState(null);
+
+      const filteredCustomers = customers.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()));
+
+      const handleViewCustomer = (customer) => {
+        setSelectedCustomer(customer);
+        setShowViewModal(true);
+      };
+
+      return (
+        <div>
+          <h2 className="mb-4">Клиентская база</h2>
+          <div className="d-flex justify-content-between mb-3">
+            <input type="text" className="form-control w-50" placeholder="Поиск по имени" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+            <div>
+              <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>Добавить клиента</button>
+            </div>
+          </div>
+          <table className="table table-striped table-hover">
+            <thead>
+              <tr>
+                <th>Имя</th>
+                <th>Email</th>
+                <th>Телефон</th>
+                <th>Общая сумма покупок</th>
+                <th>Дата последней покупки</th>
+                <th>Действия</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredCustomers.map(customer => (
+                <tr key={customer.id}>
+                  <td>{customer.name}</td>
+                  <td>{customer.email}</td>
+                  <td>{customer.phone}</td>
+                  <td>₽{customer.totalPurchases}</td>
+                  <td>{customer.lastPurchase}</td>
+                  <td>
+                    <button className="btn btn-info btn-sm me-2" onClick={() => handleViewCustomer(customer)}>Просмотр</button>
+                    <button className="btn btn-primary btn-sm me-2">Редактировать</button>
+                    <button className="btn btn-danger btn-sm">Удалить</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {showAddModal && (
+            <div className="modal show d-block" tabIndex="-1">
+              <div className="modal-dialog">
+                <div className="modal-content">
+                  <div className="modal-header">
+                    <h5 className="modal-title">Добавить клиента</h5>
+                    <button type="button" className="btn-close" onClick={() => setShowAddModal(false)}></button>
+                  </div>
+                  <div className="modal-body">
+                    <form>
+                      <div className="mb-3">
+                        <label htmlFor="name" className="form-label">Имя</label>
+                        <input type="text" className="form-control" id="name" />
+                      </div>
+                      <div className="mb-3">
+                        <label htmlFor="lastname" className="form-label">Фамилия</label>
+                        <input type="text" className="form-control" id="lastname" />
+                      </div>
+                      <div className="mb-3">
+                        <label htmlFor="patronymic" className="form-label">Отчество</label>
+                        <input type="text" className="form-control" id="patronymic" />
+                      </div>
+                      <div className="mb-3">
+                        <label htmlFor="email" className="form-label">Email</label>
+                        <input type="email" className="form-control" id="email" />
+                      </div>
+                      <div className="mb-3">
+                        <label htmlFor="phone" className="form-label">Телефон</label>
+                        <input type="text" className="form-control" id="phone" />
+                      </div>
+                      <div className="mb-3">
+                        <label htmlFor="birthDate" className="form-label">Дата рождения</label>
+                        <input type="text" className="form-control" id="birthDate" />
+                      </div>
+                      <div className="mb-3">
+                        <label htmlFor="address" className="form-label">Адрес</label>
+                        <input type="text" className="form-control" id="address" />
+                      </div>
+                    </form>
+                  </div>
+                  <div className="modal-footer">
+                    <button type="button" className="btn btn-secondary" onClick={() => setShowAddModal(false)}>Отмена</button>
+                    <button type="button" className="btn btn-primary">Сохранить</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          {showViewModal && selectedCustomer && (
+            <div className="modal show d-block" tabIndex="-1">
+              <div className="modal-dialog">
+                <div className="modal-content">
+                  <div className="modal-header">
+                    <h5 className="modal-title">Детали клиента</h5>
+                    <button type="button" className="btn-close" onClick={() => setShowViewModal(false)}></button>
+                  </div>
+                  <div className="modal-body">
+                    <p><strong>Имя:</strong> {selectedCustomer.name}</p>
+                    <p><strong>Email:</strong> {selectedCustomer.email}</p>
+                    <p><strong>Телефон:</strong> {selectedCustomer.phone}</p>
+                    <p><strong>Общая сумма покупок:</strong> ₽{selectedCustomer.totalPurchases}</p>
+                    <p><strong>Дата последней покупки:</strong> {selectedCustomer.lastPurchase}</p>
+                  </div>
+                  <div className="modal-footer">
+                    <button type="button" className="btn btn-secondary" onClick={() => setShowViewModal(false)}>Закрыть</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    // Sales Component
+    const Sales = () => {
+      const [searchTerm, setSearchTerm] = useState('');
+      const [showAddModal, setShowAddModal] = useState(false);
+      const [showViewModal, setShowViewModal] = useState(false);
+      const [showReturnModal, setShowReturnModal] = useState(false);
+      const [selectedSale, setSelectedSale] = useState(null);
+
+      const filteredSales = sales.filter(s => customers.find(c => c.id === s.customerId)?.name.toLowerCase().includes(searchTerm.toLowerCase()));
+
+      const handleViewSale = (sale) => {
+        setSelectedSale(sale);
+        setShowViewModal(true);
+      };
+
+      const handleReturnSale = (sale) => {
+        setSelectedSale(sale);
+        setShowReturnModal(true);
+      };
+
+      return (
+        <div>
+          <h2 className="mb-4">Продажи</h2>
+          <div className="d-flex justify-content-between mb-3">
+            <input type="text" className="form-control w-50" placeholder="Поиск по имени клиента" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+            <div>
+              <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>Оформить продажу</button>
+            </div>
+          </div>
+          <table className="table table-striped table-hover">
+            <thead>
+              <tr>
+                <th>Дата</th>
+                <th>Клиент</th>
+                <th>Сумма</th>
+                <th>Статус</th>
+                <th>Действия</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredSales.map(sale => (
+                <tr key={sale.id}>
+                  <td>{sale.date}</td>
+                  <td>{customers.find(c => c.id === sale.customerId)?.name || 'Неизвестно'}</td>
+                  <td>₽{sale.amount}</td>
+                  <td>{sale.status}</td>
+                  <td>
+                    <button className="btn btn-info btn-sm me-2" onClick={() => handleViewSale(sale)}>Просмотр</button>
+                    <button className="btn btn-warning btn-sm me-2" onClick={() => handleReturnSale(sale)}>Возврат</button>
+                    <button className="btn btn-success btn-sm">Печать чека</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {showAddModal && (
+            <div className="modal show d-block" tabIndex="-1">
+              <div className="modal-dialog">
+                <div className="modal-content">
+                  <div className="modal-header">
+                    <h5 className="modal-title">Оформить продажу</h5>
+                    <button type="button" className="btn-close" onClick={() => setShowAddModal(false)}></button>
+                  </div>
+                  <div className="modal-body">
+                    <form>
+                      <div className="mb-3">
+                        <label htmlFor="customer" className="form-label">Клиент</label>
+                        <div className="d-flex justify-content-between mb-3">
+                          <select className="form-control" id="customer">
+                            {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                          </select>
+                          <button type="button" className="btn btn-primary">Создать</button>
+                        </div>
+                      </div>
+                      <div className="mb-3">
+                        <label htmlFor="product" className="form-label">Товар</label>
+                        <select className="form-control" id="product">
+                          {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                        </select>
+                      </div>
+                      <div className="mb-3">
+                        <label htmlFor="quantity" className="form-label">Количество</label>
+                        <input type="number" className="form-control" id="quantity" />
+                      </div>
+                      <button type="button" className="btn btn-primary">Добавить товар</button>
+                      <div className="mb-3">
+                        <label htmlFor="discount" className="form-label">Скидка (%)</label>
+                        <input type="number" className="form-control" id="discount" />
+                      </div>
+                      <div className="mb-3">
+                        <label htmlFor="bonuses" className="form-label">Бонусы</label>
+                        <input type="number" className="form-control" id="bonuses" />
+                      </div>
+                    </form>
+                  </div>
+                  <div className="modal-footer">
+                    <button type="button" className="btn btn-secondary" onClick={() => setShowAddModal(false)}>Отмена</button>
+                    <button type="button" className="btn btn-primary">Сохранить</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          {showViewModal && selectedSale && (
+            <div className="modal show d-block" tabIndex="-1">
+              <div className="modal-dialog">
+                <div className="modal-content">
+                  <div className="modal-header">
+                    <h5 className="modal-title">Детали продажи</h5>
+                    <button type="button" className="btn-close" onClick={() => setShowViewModal(false)}></button>
+                  </div>
+                  <div className="modal-body">
+                    <p><strong>Дата:</strong> {selectedSale.date}</p>
+                    <p><strong>Клиент:</strong> {customers.find(c => c.id === selectedSale.customerId)?.name}</p>
+                    <p><strong>Сумма:</strong> ₽{selectedSale.amount}</p>
+                    <p><strong>Статус:</strong> {selectedSale.status}</p>
+                    <p><strong>Товары:</strong></p>
+                    <ul>
+                      {selectedSale.items.map((item, idx) => (
+                        <li key={idx}>{item.product} (x{item.quantity}, ₽{item.price})</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="modal-footer">
+                    <button type="button" className="btn btn-secondary" onClick={() => setShowViewModal(false)}>Закрыть</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          {showReturnModal && selectedSale && (
+            <div className="modal show d-block" tabIndex="-1">
+              <div className="modal-dialog">
+                <div className="modal-content">
+                  <div className="modal-header">
+                    <h5 className="modal-title">Оформить возврат</h5>
+                    <button type="button" className="btn-close" onClick={() => setShowReturnModal(false)}></button>
+                  </div>
+                  <div className="modal-body">
+                    <form>
+                      <div className="mb-3">
+                        <label htmlFor="return-reason" className="form-label">Причина возврата</label>
+                        <textarea className="form-control" id="return-reason" rows="4"></textarea>
+                      </div>
+                      <div className="mb-3">
+                        <label htmlFor="return-amount" className="form-label">Сумма возврата</label>
+                        <input type="number" className="form-control" id="return-amount" defaultValue={selectedSale.amount} />
+                      </div>
+                    </form>
+                  </div>
+                  <div className="modal-footer">
+                    <button type="button" className="btn btn-secondary" onClick={() => setShowReturnModal(false)}>Отмена</button>
+                    <button type="button" className="btn btn-primary">Оформить возврат</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    // Inventory Component
+    const Inventory = () => {
+      const [searchTerm, setSearchTerm] = useState('');
+      const [showViewModal, setShowViewModal] = useState(false);
+      const [showEditModal, setShowEditModal] = useState(false);
+      const [showOrderModal, setShowOrderModal] = useState(false);
+      const [selectedProduct, setSelectedProduct] = useState(null);
+
+      const filteredProducts = products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
+
+      const handleEditProduct = (product) => {
+        setSelectedProduct(product);
+        setShowEditModal(true);
+      };
+
+      const handleOrderProduct = (product) => {
+        setSelectedProduct(product);
+        setShowOrderModal(true);
+      };
+
+      return (
+        <div>
+          <h2 className="mb-4">Товарный учет</h2>
+          <div className="d-flex justify-content-between mb-3">
+            <input type="text" className="form-control w-50" placeholder="Поиск по названию товара" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+            <div>
+            </div>
+          </div>
+          <table className="table table-striped table-hover">
+            <thead>
+              <tr>
+                <th>Название</th>
+                <th>Категория</th>
+                <th>Запас</th>
+                <th>Цена</th>
+                <th>Действия</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredProducts.map(product => (
+                <tr key={product.id}>
+                  <td>{product.name}</td>
+                  <td>{product.category}</td>
+                  <td className={product.stock < 10 ? 'low-stock' : ''}>{product.stock} шт.</td>
+                  <td>₽{product.price}</td>
+                  <td>
+                    <button className="btn btn-primary btn-sm me-2" onClick={() => handleEditProduct(product)}>Редактировать</button>
+                    <button className="btn btn-danger btn-sm me-2">Удалить</button>
+                    <button className="btn btn-warning btn-sm" onClick={() => handleOrderProduct(product)}>Заказ поставщику</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {showEditModal && selectedProduct && (
+            <div className="modal show d-block" tabIndex="-1">
+              <div className="modal-dialog">
+                <div className="modal-content">
+                  <div className="modal-header">
+                    <h5 className="modal-title">Редактировать товар</h5>
+                    <button type="button" className="btn-close" onClick={() => setShowEditModal(false)}></button>
+                  </div>
+                  <div className="modal-body">
+                    <form>
+                      <div className="mb-3">
+                        <label htmlFor="edit-name" className="form-label">Название</label>
+                        <input type="text" className="form-control" id="edit-name" defaultValue={selectedProduct.name} />
+                      </div>
+                      <div className="mb-3">
+                        <label htmlFor="edit-category" className="form-label">Категория</label>
+                        <input type="text" className="form-control" id="edit-category" defaultValue={selectedProduct.category} />
+                      </div>
+                      <div className="mb-3">
+                        <label htmlFor="edit-stock" className="form-label">Запас</label>
+                        <input type="number" className="form-control" id="edit-stock" defaultValue={selectedProduct.stock} />
+                      </div>
+                      <div className="mb-3">
+                        <label htmlFor="edit-price" className="form-label">Цена</label>
+                        <input type="number" className="form-control" id="edit-price" defaultValue={selectedProduct.price} />
+                      </div>
+                    </form>
+                  </div>
+                  <div className="modal-footer">
+                    <button type="button" className="btn btn-secondary" onClick={() => setShowEditModal(false)}>Отмена</button>
+                    <button type="button" className="btn btn-primary">Сохранить</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          {showOrderModal && selectedProduct && (
+            <div className="modal show d-block" tabIndex="-1">
+              <div className="modal-dialog">
+                <div className="modal-content">
+                  <div className="modal-header">
+                    <h5 className="modal-title">Заказ поставщику</h5>
+                    <button type="button" className="btn-close" onClick={() => setShowOrderModal(false)}></button>
+                  </div>
+                  <div className="modal-body">
+                    <form>
+                      <div className="mb-3">
+                        <label htmlFor="order-quantity" className="form-label">Количество</label>
+                        <input type="number" className="form-control" id="order-quantity" />
+                      </div>
+                    </form>
+                  </div>
+                  <div className="modal-footer">
+                    <button type="button" className="btn btn-secondary" onClick={() => setShowOrderModal(false)}>Отмена</button>
+                    <button type="button" className="btn btn-primary">Отправить заказ</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    // LoyaltyPrograms Component
+    const LoyaltyPrograms = () => {
+      const [searchTerm, setSearchTerm] = useState('');
+      const [showAddModal, setShowAddModal] = useState(false);
+      const [showViewModal, setShowViewModal] = useState(false);
+      const [showEditModal, setShowEditModal] = useState(false);
+      const [selectedProgram, setSelectedProgram] = useState(null);
+
+      const filteredPrograms = loyaltyPrograms.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
+
+      const handleViewProgram = (program) => {
+        setSelectedProgram(program);
+        setShowViewModal(true);
+      };
+
+      const handleEditProgram = (program) => {
+        setSelectedProgram(program);
+        setShowEditModal(true);
+      };
+
+      return (
+        <div>
+          <h2 className="mb-4">Программы лояльности</h2>
+          <div className="d-flex justify-content-between mb-3">
+            <input type="text" className="form-control w-50" placeholder="Поиск по названию программы" value={searchTerm} onChange={e=> setSearchTerm(e.target.value)} />
+            <div>
+              <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>Создать программу</button>
+            </div>
+          </div>
+          <table className="table table-striped table-hover">
+            <thead>
+              <tr>
+                <th>Название</th>
+                <th>Тип</th>
+                <th>Ставка</th>
+                <th>Статус</th>
+                <th>Действия</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredPrograms.map(program => (
+                <tr key={program.id}>
+                  <td>{program.name}</td>
+                  <td>{program.type}</td>
+                  <td>{program.rate}</td>
+                  <td>{program.status}</td>
+                  <td>
+                    <button className="btn btn-info btn-sm me-2" onClick={() => handleViewProgram(program)}>Просмотр</button>
+                    <button className="btn btn-primary btn-sm me-2" onClick={() => handleEditProgram(program)}>Редактировать</button>
+                    <button className="btn btn-danger btn-sm">Удалить</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {showAddModal && (
+            <div className="modal show d-block" tabIndex="-1">
+              <div className="modal-dialog">
+                <div className="modal-content">
+                  <div className="modal-header">
+                    <h5 className="modal-title">Создать программу лояльности</h5>
+                    <button type="button" className="btn-close" onClick={() => setShowAddModal(false)}></button>
+                  </div>
+                  <div className="modal-body">
+                    <form>
+                      <div className="mb-3">
+                        <label htmlFor="name" className="form-label">Название</label>
+                        <input type="text" className="form-control" id="name" />
+                      </div>
+                      <div className="mb-3">
+                        <label htmlFor="type" className="form-label">Тип</label>
+                        <select className="form-control" id="type">
+                          <option>Скидка</option>
+                          <option>Бонусы</option>
+                          <option>Кэшбэк</option>
+                        </select>
+                      </div>
+                      <div className="mb-3">
+                        <label htmlFor="rate" className="form-label">Ставка</label>
+                        <input type="text" className="form-control" id="rate" />
+                      </div>
+                    </form>
+                  </div>
+                  <div className="modal-footer">
+                    <button type="button" className="btn btn-secondary" onClick={() => setShowAddModal(false)}>Отмена</button>
+                    <button type="button" className="btn btn-primary">Сохранить</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          {showViewModal && selectedProgram && (
+            <div className="modal show d-block" tabIndex="-1">
+              <div className="modal-dialog">
+                <div className="modal-content">
+                  <div className="modal-header">
+                    <h5 className="modal-title">Детали программы</h5>
+                    <button type="button" className="btn-close" onClick={() => setShowViewModal(false)}></button>
+                  </div>
+                  <div className="modal-body">
+                    <p><strong>Название:</strong> {selectedProgram.name}</p>
+                    <p><strong>Тип:</strong> {selectedProgram.type}</p>
+                    <p><strong>Ставка:</strong> {selectedProgram.rate}</p>
+                    <p><strong>Статус:</strong> {selectedProgram.status}</p>
+                  </div>
+                  <div className="modal-footer">
+                    <button type="button" className="btn btn-secondary" onClick={() => setShowViewModal(false)}>Закрыть</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          {showEditModal && selectedProgram && (
+            <div className="modal show d-block" tabIndex="-1">
+              <div className="modal-dialog">
+                <div className="modal-content">
+                  <div className="modal-header">
+                    <h5 className="modal-title">Редактировать программу</h5>
+                    <button type="button" className="btn-close" onClick={() => setShowEditModal(false)}></button>
+                  </div>
+                  <div className="modal-body">
+                    <form>
+                      <div className="mb-3">
+                        <label htmlFor="edit-name" className="form-label">Название</label>
+                        <input type="text" className="form-control" id="edit-name" defaultValue={selectedProgram.name} />
+                      </div>
+                      <div className="mb-3">
+                        <label htmlFor="edit-type" className="form-label">Тип</label>
+                        <select className="form-control" id="edit-type" defaultValue={selectedProgram.type}>
+                          <option>Скидка</option>
+                          <option>Бонусы</option>
+                          <option>Кэшбэк</option>
+                        </select>
+                      </div>
+                      <div className="mb-3">
+                        <label htmlFor="edit-rate" className="form-label">Ставка</label>
+                        <input type="text" className="form-control" id="edit-rate" defaultValue={selectedProgram.rate} />
+                      </div>
+                    </form>
+                  </div>
+                  <div className="modal-footer">
+                    <button type="button" className="btn btn-secondary" onClick={() => setShowEditModal(false)}>Отмена</button>
+                    <button type="button" className="btn btn-primary">Сохранить</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    // Reports Component
+    const Reports = () => {
+      const [searchTerm, setSearchTerm] = useState('');
+      const [showAddModal, setShowAddModal] = useState(false);
+      const [showViewModal, setShowViewModal] = useState(false);
+      const [showEditModal, setShowEditModal] = useState(false);
+      const [selectedReport, setSelectedReport] = useState(null);
+      const [activeSection, setActiveSection] = useState('Отчеты и аналитика');
+      const [reportType, setReportType] = useState('all');
+
+      // Sample reports data
+      const reports = [
+        { id: 1, name: 'Отчет по продажам', period: '01.04.2025 - 30.04.2025', type: 'Продажи', status: 'Готов' },
+        { id: 2, name: 'Аналитика клиентов', period: '01.03.2025 - 31.03.2025', type: 'Клиенты', status: 'Готов' },
+        { id: 3, name: 'Эффективность сотрудников', period: '01.01.2025 - 31.03.2025', type: 'Сотрудники', status: 'В обработке' },
+        { id: 4, name: 'Квартальный отчет продаж', period: '01.01.2025 - 31.03.2025', type: 'Продажи', status: 'Готов' },
+        { id: 5, name: 'Анализ лояльности клиентов', period: '01.02.2025 - 30.04.2025', type: 'Клиенты', status: 'Готов' },
+        { id: 6, name: 'Выполнение KPI', period: '01.04.2025 - 15.04.2025', type: 'Сотрудники', status: 'В обработке' },
+        { id: 7, name: 'Товарная аналитика', period: '01.01.2025 - 30.04.2025', type: 'Продажи', status: 'Готов' },
+        { id: 8, name: 'Сводный отчет', period: '01.04.2025 - 30.04.2025', type: 'Продажи', status: 'Готов' },
+      ];
+
+      const menuItems = [
+        'Главная',
+        'Клиентская база',
+        'Продажи',
+        'Товарный учет',
+        'Программы лояльности',
+        'Отчеты и аналитика',
+        'Управление сотрудниками',
+        'Настройки системы'
+      ];
+
+      const filteredReports = reports.filter(r => {
+        let typeMatch = true;
+        if (reportType !== 'all') {
+          typeMatch = r.type === reportType;
+        }
+        return r.name.toLowerCase().includes(searchTerm.toLowerCase()) && typeMatch;
+      });
+
+      const handleViewReport = (report) => {
+        setSelectedReport(report);
+        setShowViewModal(true);
+      };
+
+      return (
+        <div className="d-flex" style={{ minHeight: '100vh' }}>
+          
+
+          {/* Main Content */}
+          <div className="flex-grow-1">
+            {/* Top Action Buttons */}
+            <div className="d-flex justify-content-between mb-4">
+              <h2>Отчеты и аналитика</h2>
+            </div>
+
+            {/* Report Controls */}
+            <div className="d-flex justify-content-between mb-3">
+              <div className="d-flex" style={{ width: '70%' }}>
+                <input 
+                  type="text" 
+                  className="form-control me-3" 
+                  placeholder="Поиск по названию отчета" 
+                  value={searchTerm} 
+                  onChange={e => setSearchTerm(e.target.value)} 
+                />
+                <select 
+                  className="form-select" 
+                  style={{ width: '200px' }}
+                  value={reportType}
+                  onChange={e => setReportType(e.target.value)}
+                >
+                  <option value="all">Все типы</option>
+                  <option value="Продажи">Продажи</option>
+                  <option value="Клиенты">Клиенты</option>
+                  <option value="Сотрудники">Сотрудники</option>
+                </select>
+              </div>
+              <div>
+                <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>Сформировать отчет</button>
+              </div>  
+            </div>
+
+            {/* Report Content Area */}
+            <div className="border rounded p-3 bg-light-subtle">
+              <h5 className="mb-3">Отчеты</h5>
+              
+              {/* Scrollable Table */}
+              <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                <table className="table table-striped table-hover bg-white">
+                  <thead style={{ position: 'sticky', top: 0, background: 'white' }}>
+                    <tr>
+                      <th>Название</th>
+                      <th>Период</th>
+                      <th>Тип</th>
+                      <th>Статус</th>
+                      <th style={{ width: '220px' }}>Действия</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredReports.map(report => (
+                      <tr key={report.id}>
+                        <td>{report.name}</td>
+                        <td>{report.period}</td>
+                        <td>{report.type}</td>
+                        <td>
+                          <span className={`badge ${report.status === 'Готов' ? 'bg-success' : 'bg-primary'}`}>
+                            {report.status}
+                          </span>
+                        </td>
+                        <td>
+                          <button className="btn btn-info btn-sm me-1" onClick={() => handleViewReport(report)}>Просмотр</button>
+                          <button className="btn btn-success btn-sm">Экспорт</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          {/* Add Report Modal */}
+          {showAddModal && (
+            <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+              <div className="modal-dialog">
+                <div className="modal-content">
+                  <div className="modal-header">
+                    <h5 className="modal-title">Сформировать отчет</h5>
+                    <button type="button" className="btn-close" onClick={() => setShowAddModal(false)}></button>
+                  </div>
+                  <div className="modal-body">
+                    <form>
+                      <div className="mb-3">
+                        <label htmlFor="name" className="form-label">Название</label>
+                        <input type="text" className="form-control" id="name" />
+                      </div>
+                      <div className="mb-3">
+                        <label htmlFor="period" className="form-label">Период</label>
+                        <div className="row">
+                          <div className="col">
+                            <input type="date" className="form-control" id="period-start" />
+                          </div>
+                          <div className="col-auto pt-2">
+                            -
+                          </div>
+                          <div className="col">
+                            <input type="date" className="form-control" id="period-end" />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mb-3">
+                        <label htmlFor="type" className="form-label">Тип</label>
+                        <select className="form-select" id="type">
+                          <option>Продажи</option>
+                          <option>Клиенты</option>
+                          <option>Сотрудники</option>
+                        </select>
+                      </div>
+                      <div className="mb-3">
+                        <label htmlFor="parameters" className="form-label">Параметры</label>
+                        <div className="form-check">
+                          <input className="form-check-input" type="checkbox" id="param1" />
+                          <label className="form-check-label" htmlFor="param1">
+                            Включить график
+                          </label>
+                        </div>
+                        <div className="form-check">
+                          <input className="form-check-input" type="checkbox" id="param2" />
+                          <label className="form-check-label" htmlFor="param2">
+                            Включить таблицу
+                          </label>
+                        </div>
+                        <div className="form-check">
+                          <input className="form-check-input" type="checkbox" id="param3" />
+                          <label className="form-check-label" htmlFor="param3">
+                            Добавить сравнение с предыдущим периодом
+                          </label>
+                        </div>
+                      </div>
+                    </form>
+                  </div>
+                  <div className="modal-footer">
+                    <button type="button" className="btn btn-secondary" onClick={() => setShowAddModal(false)}>Отмена</button>
+                    <button type="button" className="btn btn-primary">Сформировать</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* View Report Modal */}
+          {showViewModal && selectedReport && (
+            <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+              <div className="modal-dialog">
+                <div className="modal-content">
+                  <div className="modal-header">
+                    <h5 className="modal-title">Детали отчета</h5>
+                    <button type="button" className="btn-close" onClick={() => setShowViewModal(false)}></button>
+                  </div>
+                  <div className="modal-body">
+                    <p><strong>Название:</strong> {selectedReport.name}</p>
+                    <p><strong>Период:</strong> {selectedReport.period}</p>
+                    <p><strong>Тип:</strong> {selectedReport.type}</p>
+                    <p><strong>Статус:</strong> {selectedReport.status}</p>
+                    <div className="mt-4">
+                      <h6>Основные показатели:</h6>
+                      {selectedReport.type === 'Продажи' && (
+                        <div className="row mt-3">
+                          <div className="col-6">
+                            <div className="border rounded p-3 text-center">
+                              <h3>245,680 ₽</h3>
+                              <p className="text-muted mb-0">Общая сумма продаж</p>
+                            </div>
+                          </div>
+                          <div className="col-6">
+                            <div className="border rounded p-3 text-center">
+                              <h3>128</h3>
+                              <p className="text-muted mb-0">Количество заказов</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      {selectedReport.type === 'Клиенты' && (
+                        <div className="row mt-3">
+                          <div className="col-6">
+                            <div className="border rounded p-3 text-center">
+                              <h3>43</h3>
+                              <p className="text-muted mb-0">Новых клиентов</p>
+                            </div>
+                          </div>
+                          <div className="col-6">
+                            <div className="border rounded p-3 text-center">
+                              <h3>87%</h3>
+                              <p className="text-muted mb-0">Индекс удовлетворенности</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      {selectedReport.type === 'Сотрудники' && (
+                        <div className="row mt-3">
+                          <div className="col-6">
+                            <div className="border rounded p-3 text-center">
+                              <h3>12</h3>
+                              <p className="text-muted mb-0">Активных сотрудников</p>
+                            </div>
+                          </div>
+                          <div className="col-6">
+                            <div className="border rounded p-3 text-center">
+                              <h3>94%</h3>
+                              <p className="text-muted mb-0">Выполнение плана</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="modal-footer">
+                    <button type="button" className="btn btn-secondary" onClick={() => setShowViewModal(false)}>Закрыть</button>
+                    <button type="button" className="btn btn-success">Экспорт</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+
+    // Employees Component
+    const Employees = () => {
+      const [searchTerm, setSearchTerm] = useState('');
+      const [showAddModal, setShowAddModal] = useState(false);
+      const [showViewModal, setShowViewModal] = useState(false);
+      const [showEditModal, setShowEditModal] = useState(false);
+      const [selectedEmployee, setSelectedEmployee] = useState(null);
+
+      const filteredEmployees = employees.filter(e => e.name.toLowerCase().includes(searchTerm.toLowerCase()));
+
+      const handleViewEmployee = (employee) => {
+        setSelectedEmployee(employee);
+        setShowViewModal(true);
+      };
+
+      const handleEditEmployee = (employee) => {
+        setSelectedEmployee(employee);
+        setShowEditModal(true);
+      };
+
+      return (
+        <div>
+          <h2 className="mb-4">Управление сотрудниками</h2>
+          <div className="d-flex justify-content-between mb-3">
+            <input type="text" className="form-control w-50" placeholder="Поиск по имени сотрудника" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+            <div>
+              <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>Добавить сотрудника</button>
+            </div>
+          </div>
+          <table className="table table-striped table-hover">
+            <thead>
+              <tr>
+                <th>Имя</th>
+                <th>Email</th>
+                <th>Роль</th>
+                <th>Действия</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredEmployees.map(employee => (
+                <tr key={employee.id}>
+                  <td>{employee.name}</td>
+                  <td>{employee.email}</td>
+                  <td>{employee.role}</td>
+                  <td>
+                    <button className="btn btn-info btn-sm me-2" onClick={() => handleViewEmployee(employee)}>Просмотр</button>
+                    <button className="btn btn-primary btn-sm me-2" onClick={() => handleEditEmployee(employee)}>Редактировать</button>
+                    <button className="btn btn-danger btn-sm">Удалить</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {showAddModal && (
+            <div className="modal show d-block" tabIndex="-1">
+              <div className="modal-dialog">
+                <div className="modal-content">
+                  <div className="modal-header">
+                    <h5 className="modal-title">Добавить сотрудника</h5>
+                    <button type="button" className="btn-close" onClick={() => setShowAddModal(false)}></button>
+                  </div>
+                  <div className="modal-body">
+                    <form>
+                      <div className="mb-3">
+                        <label htmlFor="name" className="form-label">Имя</label>
+                        <input type="text" className="form-control" id="name" />
+                      </div>
+                      <div className="mb-3">
+                        <label htmlFor="email" className="form-label">Email</label>
+                        <input type="email" className="form-control" id="email" />
+                      </div>
+                      <div className="mb-3">
+                        <label htmlFor="role" className="form-label">Роль</label>
+                        <select className="form-control" id="role">
+                          <option>Менеджер</option>
+                          <option>Продавец</option>
+                          <option>Администратор</option>
+                        </select>
+                      </div>
+                    </form>
+                  </div>
+                  <div className="modal-footer">
+                    <button type="button" className="btn btn-secondary" onClick={() => setShowAddModal(false)}>Отмена</button>
+                    <button type="button" className="btn btn-primary">Сохранить</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          {showViewModal && selectedEmployee && (
+            <div className="modal show d-block" tabIndex="-1">
+              <div className="modal-dialog">
+                <div className="modal-content">
+                  <div className="modal-header">
+                    <h5 className="modal-title">Детали сотрудника</h5>
+                    <button type="button" className="btn-close" onClick={() => setShowViewModal(false)}></button>
+                  </div>
+                  <div className="modal-body">
+                    <p><strong>Имя:</strong> {selectedEmployee.name}</p>
+                    <p><strong>Email:</strong> {selectedEmployee.email}</p>
+                    <p><strong>Роль:</strong> {selectedEmployee.role}</p>
+                  </div>
+                  <div className="modal-footer">
+                    <button type="button" className="btn btn-secondary" onClick={() => setShowViewModal(false)}>Закрыть</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          {showEditModal && selectedEmployee && (
+            <div className="modal show d-block" tabIndex="-1">
+              <div className="modal-dialog">
+                <div className="modal-content">
+                  <div className="modal-header">
+                    <h5 className="modal-title">Редактировать сотрудника</h5>
+                    <button type="button" className="btn-close" onClick={() => setShowEditModal(false)}></button>
+                  </div>
+                  <div className="modal-body">
+                    <form>
+                      <div className="mb-3">
+                        <label htmlFor="edit-name" className="form-label">Имя</label>
+                        <input type="text" className="form-control" id="edit-name" defaultValue={selectedEmployee.name} />
+                      </div>
+                      <div className="mb-3">
+                        <label htmlFor="edit-email" className="form-label">Email</label>
+                        <input type="email" className="form-control" id="edit-email" defaultValue={selectedEmployee.email} />
+                      </div>
+                      <div className="mb-3">
+                        <label htmlFor="edit-role" className="form-label">Роль</label>
+                        <select className="form-control" id="edit-role" defaultValue={selectedEmployee.role}>
+                          <option>Менеджер</option>
+                          <option>Продавец</option>
+                          <option>Администратор</option>
+                        </select>
+                      </div>
+                    </form>
+                  </div>
+                  <div className="modal-footer">
+                    <button type="button" className="btn btn-secondary" onClick={() => setShowEditModal(false)}>Отмена</button>
+                    <button type="button" className="btn btn-primary">Сохранить</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    // Settings Component
+    const Settings = () => {
+    const [activeTab, setActiveTab] = useState('access');
+    const [showRoleModal, setShowRoleModal] = useState(false);
+    const [selectedRole, setSelectedRole] = useState(null);
+    
+    // Список ролей
+    const roles = [
+      { id: 1, name: 'Администратор', permissions: ['sales', 'inventory', 'customers', 'analytics', 'settings', 'employees'] },
+      { id: 2, name: 'Менеджер', permissions: ['sales', 'inventory', 'customers', 'analytics'] },
+      { id: 3, name: 'Продавец', permissions: ['sales', 'inventory', 'customers'] }
+    ];
+    
+    // Список всех возможных прав
+    const allPermissions = [
+      { id: 'sales', name: 'Страница продаж' },
+      { id: 'inventory', name: 'Товарный учет' },
+      { id: 'customers', name: 'Клиентская база' },
+      { id: 'analytics', name: 'Отчеты и аналитика' },
+      { id: 'loyalty', name: 'Программы лояльности' },
+      { id: 'employees', name: 'Управление сотрудниками' },
+      { id: 'settings', name: 'Настройки системы' }
+    ];
+    
+    const handleEditRole = (role) => {
+      setSelectedRole(role);
+      setShowRoleModal(true);
+    };
+    
+    const handleAddRole = () => {
+      setSelectedRole({ id: Date.now(), name: '', permissions: [] });
+      setShowRoleModal(true);
+    };
+    
+    // Содержимое вкладки настройки доступа
+    const renderAccessSettings = () => (
+      <div>
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <h5>Роли и права доступа</h5>
+          <button className="btn btn-primary btn-sm" onClick={handleAddRole}>Добавить роль</button>
+        </div>
+        <div className="table-responsive">
+          <table className="table table-hover">
+            <thead className="table-light">
+              <tr>
+                <th>Название роли</th>
+                <th>Количество прав</th>
+                <th>Действия</th>
+              </tr>
+            </thead>
+            <tbody>
+              {roles.map(role => (
+                <tr key={role.id}>
+                  <td>{role.name}</td>
+                  <td>{role.permissions.length}</td>
+                  <td>
+                    <button 
+                      className="btn btn-primary btn-sm me-2" 
+                      onClick={() => handleEditRole(role)}
+                    >
+                      Редактировать
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+    
+    // Содержимое вкладки резервное копирование
+    const renderBackupSettings = () => (
+      <div>
+        <h5 className="mb-3">Настройки резервного копирования</h5>
+        <div className="card mb-3">
+          <div className="card-body">
+            <h6 className="card-title">Автоматическое резервное копирование</h6>
+            <div className="form-check form-switch mb-3">
+              <input className="form-check-input" type="checkbox" id="autoBackup" defaultChecked />
+              <label className="form-check-label" htmlFor="autoBackup">Включить</label>
+            </div>
+            <div className="mb-3">
+              <label htmlFor="backupFrequency" className="form-label">Частота копирования</label>
+              <select className="form-select" id="backupFrequency">
+                <option value="daily">Ежедневно</option>
+                <option value="weekly">Еженедельно</option>
+                <option value="monthly">Ежемесячно</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div className="d-flex justify-content-end">
+          <button className="btn btn-primary me-2">Создать резервную копию</button>
+          <button className="btn btn-warning">Восстановить из копии</button>
+        </div>
+      </div>
+    );
+    
+    return (
+      <div className="container-fluid">
+        <div className="mb-4">
+            <h2>Настройки системы</h2>
+        </div>
+        
+        <div className="row">
+          <div className="col">
+            <div className="nav nav-tabs mb-4">
+              <button 
+                className={`nav-link ${activeTab === 'access' ? 'active' : 'info'}`} 
+                onClick={() => setActiveTab('access')}
+              >
+                Настройки доступа
+              </button>
+              <button 
+                className={`nav-link ${activeTab === 'backup' ? 'active' : 'info'}`} 
+                onClick={() => setActiveTab('backup')}
+              >
+                Резервное копирование
+              </button>
+            </div>
+            
+            <div className="tab-content">
+              {activeTab === 'access' && renderAccessSettings()}
+              {activeTab === 'backup' && renderBackupSettings()}
+            </div>
+          </div>
+        </div>
+        
+        {/* Модальное окно редактирования роли */}
+        {showRoleModal && selectedRole && (
+          <div className="modal show d-block" tabIndex="-1">
+            <div className="modal-dialog modal-lg">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">
+                    {selectedRole.name ? `Редактирование роли: ${selectedRole.name}` : 'Добавление новой роли'}
+                  </h5>
+                  <button type="button" className="btn-close" onClick={() => setShowRoleModal(false)}></button>
+                </div>
+                <div className="modal-body">
+                  <div className="mb-4 border-bottom pb-3">
+                    <h6>Настройки доступа</h6>
+                    <div className="mb-3">
+                      <label htmlFor="role-name" className="form-label">Роль</label>
+                      <input 
+                        type="text" 
+                        className="form-control" 
+                        id="role-name" 
+                        defaultValue={selectedRole.name} 
+                        placeholder="Введите название роли"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="mb-4">
+                    <h6>Список разрешений разрешения</h6>
+                    <div className="row">
+                      {allPermissions.map(permission => (
+                        <div className="col-md-6 mb-2" key={permission.id}>
+                          <div className="form-check">
+                            <input 
+                              className="form-check-input" 
+                              type="checkbox" 
+                              id={`perm-${permission.id}`} 
+                              defaultChecked={selectedRole.permissions.includes(permission.id)} 
+                            />
+                            <label className="form-check-label" htmlFor={`perm-${permission.id}`}>
+                              {permission.name}
+                            </label>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <div className="d-flex justify-content-between w-100">
+                    <button type="button" className="btn btn-danger">Удалить</button>
+                    <div>
+                      <button type="button" className="btn btn-secondary me-2" onClick={() => setShowRoleModal(false)}>Отмена</button>
+                      <button type="button" className="btn btn-primary">Сохранить</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Затемнение фона при открытом модальном окне */}
+        {showRoleModal && (
+          <div 
+            className="modal-backdrop fade show" 
+            onClick={() => setShowRoleModal(false)}
+          ></div>
+        )}
+      </div>
+    );
+  };
+
+    // App Component
+    const App = () => {
+      const [page, setPage] = useState('dashboard');
+
+      return (
+        <div>
+          <Sidebar setPage={setPage} />
+          <div className="content">
+            {page === 'dashboard' && <Dashboard />}
+            {page === 'customers' && <CustomerBase />}
+            {page === 'sales' && <Sales />}
+            {page === 'inventory' && <Inventory />}
+            {page === 'loyalty' && <LoyaltyPrograms />}
+            {page === 'reports' && <Reports />}
+            {page === 'employees' && <Employees />}
+            {page === 'settings' && <Settings />}
+          </div>
+        </div>
+      );
+    };
+
+    // Render App
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html>
